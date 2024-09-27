@@ -40,8 +40,11 @@ OHM_MAX = "Max"
 OHM_CHILDREN = "Children"
 OHM_NAME = "Text"
 
+CONF_OPTIONS: Final = "blacklist"
+
 PLATFORM_SCHEMA = SENSOR_PLATFORM_SCHEMA.extend(
-    {vol.Required(CONF_HOST): cv.string, vol.Optional(CONF_PORT, default=8085): cv.port}
+    {vol.Required(CONF_HOST): cv.string, vol.Optional(CONF_PORT, default=8085): cv.port
+    , vol.Optional(CONF_OPTIONS, default=[]): vol.All(cv.ensure_list, [cv.string]) }
 )
 
 
@@ -201,7 +204,10 @@ class OpenHardwareMonitorData:
         child_names.append(json[OHM_NAME])
         fullname = " ".join(child_names)
 
-        dev = OpenHardwareMonitorDevice(self, fullname, path, unit_of_measurement)
+        if fullname not in self._config.get( CONF_OPTIONS ):
+            dev = OpenHardwareMonitorDevice(self, fullname, path, unit_of_measurement)
+            result.append(dev)
+        else:
+            _LOGGER.info("Eliminate OHW %s from logging", fullname)
 
-        result.append(dev)
         return result
